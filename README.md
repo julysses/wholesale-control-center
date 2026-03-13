@@ -1,128 +1,892 @@
 # WholesaleOS — AI-Powered Wholesale Real Estate Control Center
 
-A full-stack web application that serves as the single operating hub for managing the entire wholesale real estate pipeline — from lead generation through closed deals — powered by Claude AI agents.
+> **FOR CLAUDE REMOTE:** This README is the complete specification for finishing this app. Read every section before touching any file. The app is ~85% built. Your job is to fix the build errors, implement the missing features listed below, and ensure the app deploys cleanly. Work through the tasks in the order given.
 
 ---
 
-## Tech Stack
+## What This App Is
 
-| Layer | Technology |
-|---|---|
-| Frontend | React 18 + Vite + TypeScript |
-| Styling | Tailwind CSS v4 |
-| Backend / Database | Supabase (PostgreSQL + Auth + Edge Functions + Realtime) |
-| AI Agents | Anthropic Claude API (`claude-sonnet-4-5`) |
-| State Management | Zustand |
-| Data Fetching | TanStack React Query |
-| Charts | Recharts |
-| Forms | React Hook Form + Zod |
-| Routing | React Router v6 |
-| Notifications | Sonner |
-| Drag & Drop | @dnd-kit |
-| CSV Parsing | Papa Parse |
+A full-stack web application that manages the entire wholesale real estate pipeline — from lead generation through closed deals — powered by Claude AI agents (claude-sonnet-4-5) via Supabase Edge Functions.
+
+**Repo:** https://github.com/julysses/wholesale-control-center
+**Stack:** React 18 + Vite + TypeScript + Tailwind CSS v4 + Supabase + Anthropic Claude API
 
 ---
 
-## Features Built
-
-### Dashboard (`/`)
-- 4 KPI cards: Active Leads, Under Contract (with value), Closed This Month (with fees), Pipeline Value
-- Pipeline by Stage bar chart (Recharts)
-- Real-time activity feed (last 15 outreach events)
-- Today's Tasks sidebar panel
-- Hot Leads panel (score ≥ 13)
-- Upcoming Closings panel (next 14 days)
-- Deals by Stage progress breakdown
-
-### Leads (`/leads`)
-- Paginated lead table (50/page) with full filtering: status, source, motivation tag, search
-- Color-coded score badges (Red 0–7 / Yellow 8–12 / Green 13–15)
-- Add Lead modal with all property + owner fields
-- CSV Import modal with drag-and-drop, column mapping UI, 5-row preview, chunked batch insert
-- Lead Detail Drawer with:
-  - 5-factor score sliders (Motivation / Timeline / Equity / Condition / Flexibility)
-  - Full field editing
-  - AI Qualifier output panel
-  - Seller notes + internal notes
-
-### Pipeline (`/pipeline`)
-- Drag-and-drop Kanban board (6 columns: Offer Made → Closed)
-- Optimistic UI updates with Supabase rollback on error
-- Deal cards showing address, contract price, assignment fee, closing countdown
-- Deal Detail Modal with financials, dates, title company, notes, stage selector
-- Column totals (contract value + fees)
-
-### Deal Analyzer (`/analyzer`)
-- Property info + condition selector
-- Up to 6 comparable sales with distance-weighted ARV calculation
-- Itemized repair line items (foundation, roof, HVAC, plumbing, electrical, cosmetic)
-- MAO formula display: ARV × 70% − Repairs − Fee = MAO
-- 3 profit scenarios (at MAO, 5% below, 10% below)
-- AI-generated deal recommendation via Claude
-
-### Buyers (`/buyers`)
-- Buyer table with tier badges (A = Gold / B = Blue / C = Gray)
-- Add/Edit Buyer modal with:
-  - Multi-zip target input
-  - Strategy toggle pills (fix/flip, buy/hold, BRRRR, STR)
-  - Property type multi-select
-  - POF verification + amount
-- Blast New Deal modal: AI-matches buyers to a deal, generates email + SMS blast templates
-
-### AI Agents (`/ai-agents`)
-Four Claude-powered agent panels:
-
-1. **Lead Qualifier** — Scores seller conversations on 5 dimensions (1–3 each), outputs HOT/WARM/COLD tier, summary, next action, key risks. Auto-updates lead scores in Supabase.
-2. **Offer Generator** — Generates 3 strategic offer options with verbal pitches + objection-handling scripts tailored to the seller's motivation.
-3. **Outreach Writer** — Generates 3 variations of SMS, email, voicemail script, or direct mail copy. Tone selector (Friendly / Professional / Urgent).
-4. **Buyer Matcher** — Filters buyer database by buy-box criteria, ranks matches with AI fit scores, generates blast email + SMS templates.
-
-### Tasks (`/tasks`)
-- Tasks grouped by Overdue / Today / Upcoming
-- Quick-add inline form (title + due date)
-- Full task modal (title, description, priority, type, due date, status)
-- One-click complete with timestamp
-- Filters: status, priority, type
-
-### Reports (`/reports`)
-- Date range selector (30 days / 90 days / Month to date / Year to date)
-- Deal Performance: closed count, total fees, avg fee, avg days to close, monthly bar chart
-- Lead Funnel: source donut chart, conversion funnel progress bars
-- Pipeline Health: active deals by stage, pipeline value, at-risk deals (closing < 7 days)
-- Buyer Activity: tier pie chart, top buyers leaderboard, strategy breakdown
-
----
-
-## Project Structure
+## Current File Tree (what exists)
 
 ```
-wholesale-control-center/
-├── src/
-│   ├── components/
-│   │   ├── ui/             # badge, button, input, select, modal, card, skeleton, textarea
-│   │   ├── layout/         # Sidebar, TopBar, Layout
-│   │   ├── dashboard/      # KPICard, PipelineChart, ActivityFeed, DealsByStage
-│   │   └── pipeline/       # DealCard, KanbanColumn
-│   ├── pages/              # Dashboard, Leads, Pipeline, DealAnalyzer, Buyers, AIAgents, Tasks, Reports
-│   ├── stores/             # useUIStore, useLeadStore, useDealStore (Zustand)
-│   ├── hooks/              # useLeads, useDeals, useBuyers, useTasks, useAIAgent
-│   ├── lib/                # supabase.ts, utils.ts
-│   └── types/              # index.ts (all TypeScript interfaces)
-├── supabase/
-│   ├── migrations/
-│   │   └── 001_initial_schema.sql
-│   └── functions/
-│       ├── qualify-lead/
-│       ├── generate-offer/
-│       ├── write-outreach/
-│       └── match-buyers/
-├── .env.local              # gitignored — fill in your keys
-└── package.json
+src/
+├── App.tsx                          ✅ Complete — React Router setup, all 8 routes
+├── main.tsx                         ✅ Complete
+├── index.css                        ✅ Complete — Tailwind v4 @import, custom theme vars
+├── App.css                          ⚠️  Vite default — NOT imported anywhere, safe to delete
+├── types/index.ts                   ✅ Complete — all TypeScript interfaces
+├── lib/
+│   ├── supabase.ts                  ✅ Complete
+│   └── utils.ts                     ✅ Complete — formatCurrency, cn, getStatusClass, etc.
+├── stores/
+│   ├── useUIStore.ts                ✅ Complete — sidebarCollapsed toggle
+│   ├── useLeadStore.ts              ✅ Complete — selectedLead, filters
+│   └── useDealStore.ts              ✅ Complete — deals array, moveDealStage
+├── hooks/
+│   ├── useLeads.ts                  ✅ Complete — useLeads, useHotLeads, useCreateLead, useUpdateLead, useDeleteLead, useOutreachActivity, useLogActivity
+│   ├── useDeals.ts                  ✅ Complete — useDeals, useUpcomingClosings, useCreateDeal, useUpdateDeal
+│   ├── useBuyers.ts                 ✅ Complete — useBuyers, useCreateBuyer, useUpdateBuyer, useDeleteBuyer
+│   ├── useTasks.ts                  ✅ Complete — useTasks, useTodayTasks, useCreateTask, useUpdateTask, useCompleteTask
+│   └── useAIAgent.ts                ✅ Complete — useLeadQualifier, useOfferGenerator, useOutreachWriter, useBuyerMatcher
+├── components/
+│   ├── ui/
+│   │   ├── badge.tsx                ✅ Complete
+│   │   ├── button.tsx               ✅ Complete — has TS build error (fix below)
+│   │   ├── card.tsx                 ✅ Complete
+│   │   ├── input.tsx                ✅ Complete — has TS build error (fix below)
+│   │   ├── modal.tsx                ✅ Complete
+│   │   ├── select.tsx               ✅ Complete — has TS build error (fix below)
+│   │   ├── skeleton.tsx             ✅ Complete
+│   │   └── textarea.tsx             ✅ Complete — has TS build error (fix below)
+│   ├── layout/
+│   │   ├── Sidebar.tsx              ✅ Complete
+│   │   ├── TopBar.tsx               ✅ Complete
+│   │   └── Layout.tsx               ✅ Complete
+│   ├── dashboard/
+│   │   ├── KPICard.tsx              ✅ Complete
+│   │   ├── PipelineChart.tsx        ✅ Complete
+│   │   ├── ActivityFeed.tsx         ✅ Complete
+│   │   └── DealsByStage.tsx         ✅ Complete
+│   ├── leads/
+│   │   ├── LeadImportModal.tsx      ✅ Complete (standalone version, not used — Leads.tsx has its own inline)
+│   │   ├── LeadScoreDisplay.tsx     ✅ Complete
+│   │   └── OutreachTimeline.tsx     ❌ Has build error — imports useLeadOutreach (renamed to useOutreachActivity)
+│   └── pipeline/
+│       ├── DealCard.tsx             ✅ Complete — has TS build error (fix below)
+│       └── KanbanColumn.tsx         ✅ Complete — has TS build error (fix below)
+└── pages/
+    ├── Dashboard.tsx                ✅ Complete
+    ├── Leads.tsx                    ✅ Complete
+    ├── Pipeline.tsx                 ✅ Complete — has TS build errors (fix below)
+    ├── DealAnalyzer.tsx             ✅ Complete
+    ├── Buyers.tsx                   ✅ Complete
+    ├── AIAgents.tsx                 ✅ Complete
+    ├── Tasks.tsx                    ✅ Complete — has TS build error (fix below)
+    └── Reports.tsx                  ✅ Complete — has TS build error (fix below)
+
+supabase/
+├── migrations/001_initial_schema.sql  ✅ Complete — run this in Supabase SQL editor
+└── functions/
+    ├── qualify-lead/index.ts          ✅ Complete
+    ├── generate-offer/index.ts        ✅ Complete
+    ├── write-outreach/index.ts        ✅ Complete
+    └── match-buyers/index.ts          ✅ Complete
 ```
 
 ---
 
-## Setup & Installation
+## TASK 1 — Fix All TypeScript Build Errors (MUST DO FIRST)
+
+Run `npm run build` to confirm errors. Fix each one exactly as described. All errors are `import type` violations from `verbatimModuleSyntax` being enabled in tsconfig, plus one missing export and one undefined check.
+
+### Fix pattern: change `import { SomeType }` to `import type { SomeType }` when importing only types.
+
+**File: `src/components/ui/button.tsx` line 3**
+```ts
+// CHANGE:
+import { ButtonHTMLAttributes, forwardRef } from 'react';
+// TO:
+import { forwardRef, type ButtonHTMLAttributes } from 'react';
+```
+
+**File: `src/components/ui/input.tsx` line 2**
+```ts
+// CHANGE:
+import { InputHTMLAttributes, forwardRef } from 'react';
+// TO:
+import { forwardRef, type InputHTMLAttributes } from 'react';
+```
+
+**File: `src/components/ui/select.tsx` line 2**
+```ts
+// CHANGE:
+import { SelectHTMLAttributes, forwardRef } from 'react';
+// TO:
+import { forwardRef, type SelectHTMLAttributes } from 'react';
+```
+
+**File: `src/components/ui/textarea.tsx` line 2**
+```ts
+// CHANGE:
+import { TextareaHTMLAttributes, forwardRef } from 'react';
+// TO:
+import { forwardRef, type TextareaHTMLAttributes } from 'react';
+```
+
+**File: `src/hooks/useAIAgent.ts` line 4**
+```ts
+// CHANGE:
+import { QualificationResult, OfferResult, OutreachVariation, BuyerMatchResult } from '@/types';
+// TO:
+import type { QualificationResult, OfferResult, OutreachVariation, BuyerMatchResult } from '@/types';
+```
+
+**File: `src/hooks/useBuyers.ts` line 3**
+```ts
+// CHANGE:
+import { Buyer } from '@/types';
+// TO:
+import type { Buyer } from '@/types';
+```
+
+**File: `src/hooks/useDeals.ts` line 3**
+```ts
+// CHANGE:
+import { Deal } from '@/types';
+// TO:
+import type { Deal } from '@/types';
+```
+
+**File: `src/hooks/useLeads.ts` line 3**
+```ts
+// CHANGE:
+import { Lead } from '@/types';
+// TO:
+import type { Lead } from '@/types';
+```
+
+**File: `src/hooks/useTasks.ts` line 3**
+```ts
+// CHANGE:
+import { Task } from '@/types';
+// TO:
+import type { Task } from '@/types';
+```
+
+**File: `src/stores/useDealStore.ts` line 2**
+```ts
+// CHANGE:
+import { Deal } from '@/types';
+// TO:
+import type { Deal } from '@/types';
+```
+
+**File: `src/stores/useLeadStore.ts` line 2**
+```ts
+// CHANGE:
+import { Lead } from '@/types';
+// TO:
+import type { Lead } from '@/types';
+```
+
+**File: `src/pages/Buyers.tsx` line 11**
+```ts
+// CHANGE:
+import { Buyer } from '@/types';
+// TO:
+import type { Buyer } from '@/types';
+```
+
+**File: `src/pages/Leads.tsx` line 12**
+```ts
+// CHANGE:
+import { Lead } from '@/types';
+// TO:
+import type { Lead } from '@/types';
+```
+
+**File: `src/pages/Tasks.tsx` line 8**
+```ts
+// CHANGE:
+import { Task } from '@/types';
+// TO:
+import type { Task } from '@/types';
+```
+
+**File: `src/pages/Pipeline.tsx` lines 10 and 15-17**
+```ts
+// CHANGE:
+import { Deal } from '@/types';
+// ...
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverEvent,
+  DragStartEvent,
+  ...
+} from '@dnd-kit/core';
+// TO:
+import type { Deal } from '@/types';
+// ...
+import {
+  DndContext,
+  type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
+  ...
+} from '@dnd-kit/core';
+```
+
+**File: `src/components/pipeline/DealCard.tsx` line 1**
+```ts
+// CHANGE:
+import { Deal } from '@/types';
+// TO:
+import type { Deal } from '@/types';
+```
+
+**File: `src/components/pipeline/KanbanColumn.tsx` line 1**
+```ts
+// CHANGE:
+import { Deal } from '@/types';
+// TO:
+import type { Deal } from '@/types';
+```
+
+**File: `src/pages/Reports.tsx` line ~243**
+
+Find the Recharts `<Pie>` label prop. The `percent` param is possibly undefined. Fix:
+```tsx
+// CHANGE:
+label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+// TO:
+label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+```
+
+**File: `src/components/leads/OutreachTimeline.tsx`**
+
+This file imports `useLeadOutreach` which was renamed. Find line 1 and fix the import:
+```ts
+// CHANGE:
+import { useLeadOutreach } from '@/hooks/useLeads';
+// TO:
+import { useOutreachActivity } from '@/hooks/useLeads';
+```
+Then find every usage of `useLeadOutreach` in that file and rename it to `useOutreachActivity`.
+
+**After all fixes, run `npm run build` — it must complete with zero errors before proceeding.**
+
+---
+
+## TASK 2 — Add Login / Auth Page
+
+The app currently has no authentication. Supabase Auth is already set up in `src/lib/supabase.ts`. Add a login page and protect all routes.
+
+### 2a. Create `src/pages/Login.tsx`
+
+```tsx
+import { useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Building2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { Toaster } from 'sonner';
+
+export function Login() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) return toast.error('Enter email and password');
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      toast.error(error.message);
+    }
+    setLoading(false);
+    // On success, the auth listener in App.tsx will redirect automatically
+  };
+
+  return (
+    <div className="min-h-screen bg-[#F2F4F6] flex items-center justify-center p-4">
+      <Toaster position="top-right" richColors />
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
+        {/* Logo */}
+        <div className="flex items-center gap-3 mb-8">
+          <div className="p-2 bg-[#1B3A5C] rounded-xl">
+            <Building2 className="h-7 w-7 text-[#E8720C]" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-[#1B3A5C]">WholesaleOS</h1>
+            <p className="text-xs text-gray-400">Real Estate Control Center</p>
+          </div>
+        </div>
+
+        <h2 className="text-2xl font-bold text-gray-900 mb-1">Sign in</h2>
+        <p className="text-sm text-gray-500 mb-6">
+          Access is by invitation only. Contact your admin to get an account.
+        </p>
+
+        <form onSubmit={handleLogin} className="space-y-4">
+          <Input
+            label="Email address"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@company.com"
+            autoComplete="email"
+          />
+          <Input
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            autoComplete="current-password"
+          />
+          <Button type="submit" loading={loading} className="w-full" size="lg">
+            Sign In
+          </Button>
+        </form>
+      </div>
+    </div>
+  );
+}
+```
+
+### 2b. Update `src/App.tsx` to handle auth session
+
+Replace the entire contents of `src/App.tsx` with:
+
+```tsx
+import { useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { Session } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
+import { Layout } from '@/components/layout/Layout';
+import { Login } from '@/pages/Login';
+import { Dashboard } from '@/pages/Dashboard';
+import { Leads } from '@/pages/Leads';
+import { Pipeline } from '@/pages/Pipeline';
+import { DealAnalyzer } from '@/pages/DealAnalyzer';
+import { Buyers } from '@/pages/Buyers';
+import { AIAgents } from '@/pages/AIAgents';
+import { Tasks } from '@/pages/Tasks';
+import { Reports } from '@/pages/Reports';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { staleTime: 60000, retry: 1 },
+  },
+});
+
+export default function App() {
+  const [session, setSession] = useState<Session | null | undefined>(undefined);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Still loading session
+  if (session === undefined) {
+    return (
+      <div className="min-h-screen bg-[#F2F4F6] flex items-center justify-center">
+        <div className="h-8 w-8 border-4 border-[#1B3A5C] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Routes>
+          {!session ? (
+            <>
+              <Route path="/login" element={<Login />} />
+              <Route path="*" element={<Navigate to="/login" replace />} />
+            </>
+          ) : (
+            <Route element={<Layout />}>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/leads" element={<Leads />} />
+              <Route path="/pipeline" element={<Pipeline />} />
+              <Route path="/analyzer" element={<DealAnalyzer />} />
+              <Route path="/buyers" element={<Buyers />} />
+              <Route path="/ai-agents" element={<AIAgents />} />
+              <Route path="/tasks" element={<Tasks />} />
+              <Route path="/reports" element={<Reports />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
+          )}
+        </Routes>
+      </BrowserRouter>
+    </QueryClientProvider>
+  );
+}
+```
+
+### 2c. Add Sign Out to the TopBar
+
+In `src/components/layout/TopBar.tsx`, add a sign out button next to the user avatar:
+
+```tsx
+// Add this import at the top:
+import { supabase } from '@/lib/supabase';
+
+// Replace the user button with:
+<button
+  onClick={async () => {
+    await supabase.auth.signOut();
+  }}
+  className="flex items-center gap-2 p-2 text-gray-600 rounded-lg hover:bg-gray-100 text-sm"
+  title="Sign out"
+>
+  <UserCircle className="h-6 w-6" />
+</button>
+```
+
+---
+
+## TASK 3 — Fix `src/components/leads/OutreachTimeline.tsx`
+
+This file was scaffolded but imports the wrong hook name. Rewrite the full file:
+
+```tsx
+import { useOutreachActivity } from '@/hooks/useLeads';
+import { formatDateTime } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { MessageSquare, Phone, Mail, Home, User } from 'lucide-react';
+
+interface OutreachTimelineProps {
+  leadId: string;
+}
+
+const channelConfig: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
+  sms:         { icon: <MessageSquare className="h-3.5 w-3.5" />, color: 'bg-blue-100 text-blue-600',   label: 'SMS' },
+  call:        { icon: <Phone className="h-3.5 w-3.5" />,        color: 'bg-green-100 text-green-600',  label: 'Call' },
+  email:       { icon: <Mail className="h-3.5 w-3.5" />,         color: 'bg-purple-100 text-purple-600',label: 'Email' },
+  voicemail:   { icon: <Phone className="h-3.5 w-3.5" />,        color: 'bg-yellow-100 text-yellow-600',label: 'Voicemail' },
+  direct_mail: { icon: <Home className="h-3.5 w-3.5" />,         color: 'bg-orange-100 text-orange-600',label: 'Mail' },
+  in_person:   { icon: <User className="h-3.5 w-3.5" />,         color: 'bg-pink-100 text-pink-600',    label: 'In Person' },
+};
+
+export function OutreachTimeline({ leadId }: OutreachTimelineProps) {
+  const { data: activities, isLoading } = useOutreachActivity(leadId);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="flex gap-3 animate-pulse">
+            <div className="h-7 w-7 rounded-full bg-gray-200 shrink-0" />
+            <div className="flex-1 space-y-1 pt-1">
+              <div className="h-3 bg-gray-200 rounded w-1/2" />
+              <div className="h-3 bg-gray-200 rounded w-3/4" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (!activities || activities.length === 0) {
+    return (
+      <div className="text-center py-6 text-gray-400">
+        <MessageSquare className="h-7 w-7 mx-auto mb-2 opacity-30" />
+        <p className="text-sm">No contact activity yet</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+      {activities.map((activity: any) => {
+        const config = channelConfig[activity.channel] ?? channelConfig['sms'];
+        const isInbound = activity.direction === 'inbound';
+
+        return (
+          <div key={activity.id} className={cn('flex gap-3', isInbound ? 'flex-row-reverse' : 'flex-row')}>
+            <div className={cn('h-7 w-7 rounded-full flex items-center justify-center shrink-0', config.color)}>
+              {config.icon}
+            </div>
+            <div className={cn(
+              'flex-1 max-w-xs rounded-xl px-3 py-2 text-sm',
+              isInbound ? 'bg-blue-50 rounded-tr-none' : 'bg-gray-100 rounded-tl-none'
+            )}>
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-xs font-semibold text-gray-600">{config.label}</span>
+                {activity.status && (
+                  <span className="text-xs text-gray-400 capitalize">{activity.status}</span>
+                )}
+              </div>
+              {activity.message && (
+                <p className="text-gray-700 text-xs">{activity.message}</p>
+              )}
+              {activity.response && (
+                <p className="text-blue-700 text-xs mt-1 italic">Reply: {activity.response}</p>
+              )}
+              <p className="text-xs text-gray-400 mt-1">{formatDateTime(activity.created_at)}</p>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+```
+
+---
+
+## TASK 4 — Add Log Activity Modal to Leads Page
+
+In `src/pages/Leads.tsx`, the row action "Log Activity" currently calls `setOpenMenuId(null)` but doesn't open any modal. Implement the full flow:
+
+### 4a. Add state and modal trigger in the `Leads` component
+
+Add at the top of the `Leads` function body:
+```tsx
+const [logActivityLead, setLogActivityLead] = useState<Lead | null>(null);
+```
+
+In the row actions dropdown, update the "Log Activity" menu item to:
+```tsx
+<button
+  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+  onClick={() => { setLogActivityLead(lead); setOpenMenuId(null); }}
+>
+  <Phone className="h-3.5 w-3.5" /> Log Activity
+</button>
+```
+
+Add the modal at the bottom of the return, after the other modals:
+```tsx
+{logActivityLead && (
+  <LogActivityModal
+    lead={logActivityLead}
+    onClose={() => setLogActivityLead(null)}
+  />
+)}
+```
+
+### 4b. Add the `LogActivityModal` component at the bottom of `Leads.tsx`
+
+```tsx
+function LogActivityModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
+  const logActivity = useLogActivity();
+  const [form, setForm] = useState({
+    channel: 'call',
+    direction: 'outbound',
+    status: 'answered',
+    message: '',
+    response: '',
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await logActivity.mutateAsync({
+      lead_id: lead.id,
+      channel: form.channel,
+      direction: form.direction,
+      status: form.status,
+      message: form.message || undefined,
+      response: form.response || undefined,
+    });
+    onClose();
+  };
+
+  return (
+    <Modal open={true} onClose={onClose} title={`Log Activity — ${lead.property_address}`} size="md">
+      <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <Select
+            label="Channel"
+            value={form.channel}
+            onChange={(e) => setForm({ ...form, channel: e.target.value })}
+            options={[
+              { value: 'call', label: 'Call' },
+              { value: 'sms', label: 'SMS' },
+              { value: 'email', label: 'Email' },
+              { value: 'voicemail', label: 'Voicemail' },
+              { value: 'direct_mail', label: 'Direct Mail' },
+              { value: 'in_person', label: 'In Person' },
+            ]}
+          />
+          <Select
+            label="Direction"
+            value={form.direction}
+            onChange={(e) => setForm({ ...form, direction: e.target.value })}
+            options={[
+              { value: 'outbound', label: 'Outbound' },
+              { value: 'inbound', label: 'Inbound' },
+            ]}
+          />
+          <Select
+            label="Status"
+            value={form.status}
+            onChange={(e) => setForm({ ...form, status: e.target.value })}
+            options={[
+              { value: 'answered', label: 'Answered' },
+              { value: 'no_answer', label: 'No Answer' },
+              { value: 'voicemail', label: 'Left Voicemail' },
+              { value: 'sent', label: 'Sent' },
+              { value: 'delivered', label: 'Delivered' },
+            ]}
+          />
+        </div>
+        <Textarea
+          label="Message / Notes"
+          value={form.message}
+          onChange={(e) => setForm({ ...form, message: e.target.value })}
+          placeholder="What was said or sent..."
+          rows={3}
+        />
+        <Textarea
+          label="Seller Response (if any)"
+          value={form.response}
+          onChange={(e) => setForm({ ...form, response: e.target.value })}
+          placeholder="What the seller said back..."
+          rows={2}
+        />
+        <div className="flex justify-end gap-3">
+          <Button variant="outline" type="button" onClick={onClose}>Cancel</Button>
+          <Button type="submit" loading={logActivity.isPending}>Log Activity</Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+```
+
+Also add `useLogActivity` to the imports at the top of `Leads.tsx`:
+```ts
+import { useLeads, useDeleteLead, useCreateLead, useUpdateLead, useLogActivity } from '@/hooks/useLeads';
+```
+
+---
+
+## TASK 5 — Add "Move to Pipeline" Action in Leads Table
+
+In `src/pages/Leads.tsx`, the row action "Move to Pipeline" should create a Deal from a Lead.
+
+Add `useCreateDeal` import:
+```ts
+import { useCreateDeal } from '@/hooks/useDeals';
+```
+
+Inside the `Leads` component, add:
+```tsx
+const createDeal = useCreateDeal();
+
+const handleMoveToPipeline = async (lead: Lead) => {
+  if (!confirm(`Create a pipeline deal for ${lead.property_address}?`)) return;
+  await createDeal.mutateAsync({
+    lead_id: lead.id,
+    deal_name: lead.property_address,
+    stage: 'offer_made',
+    contract_price: lead.offer_price ?? lead.mao ?? undefined,
+    arv: lead.estimated_arv ?? undefined,
+    repair_estimate: lead.estimated_repairs ?? undefined,
+    seller_name: `${lead.owner_first_name ?? ''} ${lead.owner_last_name ?? ''}`.trim() || undefined,
+  });
+};
+```
+
+Update the row actions dropdown to wire up this function:
+```tsx
+<button
+  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+  onClick={() => { handleMoveToPipeline(lead); setOpenMenuId(null); }}
+>
+  <ArrowRight className="h-3.5 w-3.5" /> Move to Pipeline
+</button>
+```
+
+---
+
+## TASK 6 — Deal Analyzer "Save to Lead"
+
+In `src/pages/DealAnalyzer.tsx`, add a "Save to Lead" button in the Results panel that writes back to Supabase.
+
+### 6a. Add lead selector state and imports
+
+```tsx
+import { useLeads, useUpdateLead } from '@/hooks/useLeads';
+
+// Inside DealAnalyzer component, add:
+const [savingToLead, setSavingToLead] = useState(false);
+const [saveLeadId, setSaveLeadId] = useState('');
+const { data: leadsData } = useLeads({ pageSize: 200 });
+const updateLead = useUpdateLead();
+const leads = leadsData?.data ?? [];
+```
+
+### 6b. Add save handler
+
+```tsx
+const handleSaveToLead = async () => {
+  if (!saveLeadId) return toast.error('Select a lead to save to');
+  if (arv === 0) return toast.error('Calculate ARV first');
+  setSavingToLead(true);
+  await updateLead.mutateAsync({
+    id: saveLeadId,
+    updates: {
+      estimated_arv: arv,
+      estimated_repairs: estimatedRepairs,
+      mao,
+    },
+  });
+  setSavingToLead(false);
+  toast.success('Analysis saved to lead');
+};
+```
+
+### 6c. Add UI to the right panel (after the AI Recommendation card)
+
+```tsx
+{arv > 0 && (
+  <Card>
+    <CardHeader><CardTitle>Save to Lead</CardTitle></CardHeader>
+    <CardContent className="space-y-3">
+      <Select
+        label="Select Lead"
+        value={saveLeadId}
+        onChange={(e) => setSaveLeadId(e.target.value)}
+        options={leads.map((l) => ({ value: l.id, label: l.property_address }))}
+        placeholder="Choose a lead..."
+      />
+      <Button
+        onClick={handleSaveToLead}
+        loading={savingToLead}
+        disabled={!saveLeadId}
+        icon={<Save className="h-4 w-4" />}
+        className="w-full"
+      >
+        Save ARV + Repairs + MAO to Lead
+      </Button>
+    </CardContent>
+  </Card>
+)}
+```
+
+Add `Save` to the lucide-react imports at the top of `DealAnalyzer.tsx`.
+
+---
+
+## TASK 7 — Add Outreach Timeline Tab to Lead Detail Drawer
+
+In `src/pages/Leads.tsx`, inside `LeadDetailDrawer`, add a tab system with two tabs: **Details** and **Activity Timeline**.
+
+At the top of `LeadDetailDrawer`, add:
+```tsx
+import { OutreachTimeline } from '@/components/leads/OutreachTimeline';
+
+// Add to component state:
+const [activeTab, setActiveTab] = useState<'details' | 'timeline'>('details');
+```
+
+Wrap the existing form content in a tab panel:
+```tsx
+{/* Tab headers */}
+<div className="flex border-b border-gray-200 -mx-6 px-6">
+  {(['details', 'timeline'] as const).map((tab) => (
+    <button
+      key={tab}
+      onClick={() => setActiveTab(tab)}
+      className={cn(
+        'px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors capitalize',
+        activeTab === tab
+          ? 'border-[#1B3A5C] text-[#1B3A5C]'
+          : 'border-transparent text-gray-500 hover:text-gray-700'
+      )}
+    >
+      {tab === 'timeline' ? 'Activity Timeline' : 'Details'}
+    </button>
+  ))}
+</div>
+
+{/* Tab content */}
+{activeTab === 'details' && (
+  // ... all the existing form JSX goes here ...
+)}
+{activeTab === 'timeline' && (
+  <div className="py-2">
+    <OutreachTimeline leadId={lead.id} />
+  </div>
+)}
+```
+
+---
+
+## TASK 8 — Add Realtime Subscriptions
+
+In `src/hooks/useDeals.ts`, add a realtime subscription inside `useDeals` so the Kanban board updates live:
+
+```ts
+import { useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+
+// Inside useDeals(), after the useQuery call:
+const qc = useQueryClient();
+
+useEffect(() => {
+  const channel = supabase
+    .channel('deals-realtime')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'deals' }, () => {
+      qc.invalidateQueries({ queryKey: ['deals'] });
+    })
+    .subscribe();
+
+  return () => { supabase.removeChannel(channel); };
+}, [qc]);
+```
+
+Do the same for tasks in `src/hooks/useTasks.ts` inside `useTasks`:
+
+```ts
+useEffect(() => {
+  const channel = supabase
+    .channel('tasks-realtime')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => {
+      qc.invalidateQueries({ queryKey: ['tasks'] });
+    })
+    .subscribe();
+
+  return () => { supabase.removeChannel(channel); };
+}, [qc]);
+```
+
+---
+
+## TASK 9 — Delete Orphaned/Unused Files
+
+Delete these files that are no longer needed:
+- `src/App.css` — Vite default file, not imported anywhere
+
+```bash
+rm src/App.css
+```
+
+---
+
+## TASK 10 — Final Build Verification & Commit
+
+After completing all tasks above:
+
+```bash
+# 1. Verify zero build errors
+npm run build
+
+# 2. Verify dev server starts cleanly
+npm run dev
+# Open http://localhost:5173 — should show login page
+# After login should reach dashboard with no console errors
+
+# 3. Commit everything
+git add .
+git commit -m "feat: fix build errors, add auth, log activity, move to pipeline, realtime, outreach timeline"
+git push
+```
+
+---
+
+## Setup Instructions (for the project owner)
 
 ### 1. Clone and install
 
@@ -134,162 +898,155 @@ npm install
 
 ### 2. Create a Supabase project
 
-1. Go to [supabase.com](https://supabase.com) and create a new project
+1. Go to [supabase.com](https://supabase.com) → New project
 2. Go to **Settings → API** and copy:
-   - Project URL
-   - `anon` public key
-   - `service_role` secret key (keep this safe — server-side only)
+   - Project URL → `VITE_SUPABASE_URL`
+   - `anon` public key → `VITE_SUPABASE_ANON_KEY`
+   - `service_role` secret key → for Edge Function secrets only
 
-### 3. Configure environment variables
-
-Fill in `.env.local`:
+### 3. Create `.env.local` (gitignored)
 
 ```env
 VITE_SUPABASE_URL=https://your-project-ref.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_SUPABASE_ANON_KEY=your-anon-key-here
 VITE_APP_NAME=WholesaleOS
 ```
 
 ### 4. Run the database migration
 
-In the Supabase dashboard, go to **SQL Editor** and run the full contents of:
-
+In Supabase dashboard → **SQL Editor** → paste and run the full contents of:
 ```
 supabase/migrations/001_initial_schema.sql
 ```
 
-This creates all 7 tables (leads, deals, buyers, tasks, outreach_activity, comps, ai_agent_log), indexes, RLS policies, and triggers.
+### 5. Create your user account
 
-### 5. Set up Supabase CLI and deploy Edge Functions
+In Supabase dashboard → **Authentication → Users → Add user**
+Create your email/password login. The app does not have self-signup by design.
+
+### 6. Set up and deploy Edge Functions
 
 ```bash
 npm install -g supabase
 supabase login
 supabase link --project-ref YOUR_PROJECT_REF
-```
 
-Set the Edge Function secrets:
+# Set secrets (these stay server-side, never in .env.local)
+supabase secrets set ANTHROPIC_API_KEY=sk-ant-your-key-here
+supabase secrets set SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
-```bash
-supabase secrets set ANTHROPIC_API_KEY=your_anthropic_api_key
-supabase secrets set SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-```
-
-Deploy all 4 AI agent functions:
-
-```bash
+# Deploy all 4 AI agent functions
 supabase functions deploy qualify-lead
 supabase functions deploy generate-offer
 supabase functions deploy write-outreach
 supabase functions deploy match-buyers
 ```
 
-### 6. Run the dev server
+### 7. Run locally
 
 ```bash
 npm run dev
+# Opens at http://localhost:5173
 ```
-
-Open [http://localhost:5173](http://localhost:5173)
 
 ---
 
-## Deployment (Vercel — Recommended)
+## Deployment to Vercel
 
 ```bash
 npm install -g vercel
 vercel
 ```
 
-Set these environment variables in the Vercel dashboard (Settings → Environment Variables):
-
+In Vercel dashboard → Project → Settings → Environment Variables, add:
 ```
-VITE_SUPABASE_URL
-VITE_SUPABASE_ANON_KEY
-VITE_APP_NAME
+VITE_SUPABASE_URL        = https://your-project-ref.supabase.co
+VITE_SUPABASE_ANON_KEY   = your-anon-key
+VITE_APP_NAME            = WholesaleOS
 ```
 
-The Supabase Edge Functions run on Supabase's own servers — no additional server setup needed.
+Redeploy after adding env vars. The Supabase Edge Functions run on Supabase's infrastructure — no server needed.
 
 ---
 
-## Next Steps & Remaining Features
+## Architecture Overview
 
-### High Priority
+### Data Flow
 
-- [ ] **Authentication** — Add Supabase Auth login page (email/password). Currently the app assumes an authenticated session. Need a `/login` route, session guard on the Layout, and redirect on sign-out.
-- [ ] **Fix TypeScript build errors** — Run `npm run build` and resolve any remaining type errors from the initial scaffolding pass (unused imports, strict null checks, etc.)
-- [ ] **Test dev server end-to-end** — Connect a real Supabase project, add sample data, and verify all pages render and CRUD operations work correctly.
+```
+User → React UI → TanStack Query → Supabase JS Client → PostgreSQL (RLS enforced)
+                                 → Supabase Edge Function → Claude API → Response
+```
 
-### Features to Build
+### AI Agents (Edge Functions)
 
-- [ ] **Lead Detail — Outreach Timeline tab** — A chronological log of all SMS, calls, emails for a lead, color-coded by channel with inbound/outbound alignment (left/right like iMessage).
-- [ ] **Lead Detail — Comps section** — Allow adding comparable sales directly from the Lead Detail drawer and auto-calculate ARV.
-- [ ] **Deal Analyzer → Save to Lead** — "Save Analysis" button on the Deal Analyzer that writes ARV, repairs, and MAO back to the linked lead record in Supabase.
-- [ ] **Pipeline → Move Lead to Pipeline** — A "Move to Pipeline" action on the Leads table that creates a Deal record from a Lead with one click.
-- [ ] **Log Activity modal** — A quick modal to log SMS/call/email/voicemail/mail from the lead table row actions (currently the button exists but opens no modal).
-- [ ] **Realtime updates** — Subscribe to Supabase Realtime on the `deals` and `tasks` tables so the Kanban board and task list update live when teammates make changes.
-- [ ] **Tasks — Link to Lead/Deal** — When creating a task, add dropdowns to link it to a specific lead or deal record (currently the schema supports it but the UI doesn't expose it).
-- [ ] **Notifications** — Wire the TopBar bell icon to show tasks due today that haven't been completed. Use Supabase Realtime for live badge count.
-- [ ] **Global search** — The TopBar search currently navigates to `/leads?search=...` — expand to also search deals, buyers, and tasks.
-- [ ] **Mark DNC** — Implement the "Mark DNC" row action in the Leads table (set `dnc = true`, `status = 'dnc'`).
-- [ ] **Reports — Export to CSV** — Add export buttons on each report card to download the underlying data as CSV.
-- [ ] **Buyer blast — Send + log** — After generating the blast in the Buyer Match modal, add a "Send Blast" button that logs an `outreach_activity` record for each buyer.
-- [ ] **Deal documents** — Implement the PSA and assignment agreement upload area in the Deal Detail modal (Supabase Storage).
+Each function in `supabase/functions/` follows this pattern:
+1. Receive authenticated POST from frontend via `supabase.functions.invoke()`
+2. Pull additional data from Supabase if needed (e.g. buyer list for match-buyers)
+3. Build prompt and call `https://api.anthropic.com/v1/messages` with `claude-sonnet-4-5`
+4. Parse JSON response from Claude
+5. Log run to `ai_agent_log` table (fire-and-forget)
+6. Return structured JSON to frontend
 
-### Polish & Production Hardening
+### State Management
 
-- [ ] **Loading skeletons** — Add skeleton loaders to the Pipeline board columns and Dashboard panels.
-- [ ] **Empty states** — Add illustrated empty state components to Leads, Buyers, Pipeline, and Tasks when there's no data.
-- [ ] **Error boundaries** — Add React error boundaries around each page so one failing component doesn't crash the whole app.
-- [ ] **Responsive / tablet layout** — Test and fix layout at 768px width. The Kanban board needs horizontal scroll on smaller screens.
-- [ ] **Supabase Auth — Team access** — Add user management so the team lead can invite agents. Update RLS policies to scope leads to `assigned_to = auth.uid()` per user if needed.
-- [ ] **Performance** — Implement list virtualization (e.g. `@tanstack/react-virtual`) for the Leads table when row count exceeds 500.
-- [ ] **Deal Analyzer — Save comps** — After calculating ARV, save each comp as a `comps` record in Supabase linked to the selected lead.
-- [ ] **Recurring tasks** — Auto-create a "Review new inbound leads" task daily at 7am (can be done via a Supabase cron job or pg_cron).
-- [ ] **Audit trail** — Log all status changes to `outreach_activity` or a new `audit_log` table so you have a full history of who changed what and when.
+- **Zustand** — UI state only (sidebar collapse, selected lead, deal list for optimistic updates)
+- **TanStack Query** — all server state (leads, deals, buyers, tasks). 60s stale time.
+- **Supabase Realtime** — live invalidation on `deals` and `tasks` table changes
 
-### Integrations (Future)
+### Authentication
 
-- [ ] **Twilio SMS** — Replace manual SMS logging with actual sending via a Supabase Edge Function that calls the Twilio API.
-- [ ] **SendGrid / Resend email** — Send outreach emails directly from the app with tracking.
-- [ ] **PropStream / BatchLeads webhook** — Auto-import new leads via webhook instead of CSV.
-- [ ] **DocuSign / HelloSign** — Send PSA and assignment agreements for e-signature directly from the Deal Detail page.
-- [ ] **Google Calendar sync** — Sync tasks and closing dates to Google Calendar.
+- Supabase Auth (email/password)
+- Session stored in localStorage by Supabase JS client automatically
+- `App.tsx` listens to `onAuthStateChange` — routes render based on session presence
+- RLS on all tables: `auth.role() = 'authenticated'` — no data accessible without login
+- No self-signup: users created manually in Supabase dashboard
 
 ---
 
-## Database Schema Overview
+## Database Tables
 
-| Table | Purpose |
-|---|---|
-| `leads` | All seller leads with qualification scores, contact info, financial estimates |
-| `deals` | Active pipeline deals linked to leads, with financials and stage tracking |
-| `buyers` | Buyer database with buy-box criteria and tier ratings |
-| `tasks` | Follow-up tasks linked to leads, deals, or buyers |
-| `outreach_activity` | Every SMS, call, email, voicemail logged per lead |
-| `comps` | Comparable sales entries linked to leads for ARV calculation |
-| `ai_agent_log` | Full log of every AI agent run with input/output/token usage |
+| Table | Key Fields | Notes |
+|---|---|---|
+| `leads` | property_address, status, total_score (generated), owner_*, score_* | Core entity. total_score is computed column |
+| `deals` | lead_id (FK), stage, contract_price, assignment_fee, closing_date | Pipeline tracking |
+| `buyers` | first_name, last_name, tier, target_zips[], strategy[], max_price | Buy-box criteria |
+| `tasks` | title, due_date, priority, status, lead_id/deal_id/buyer_id | Follow-up system |
+| `outreach_activity` | lead_id (FK), channel, direction, message, response | Contact log per lead |
+| `comps` | lead_id (FK), sale_price, sqft, distance_miles | For ARV calc |
+| `ai_agent_log` | agent_type, input_data, output_data, tokens_used | Usage tracking |
 
 ---
 
 ## Color Palette
 
-| Token | Hex | Usage |
+| Variable | Hex | Usage |
 |---|---|---|
-| Primary (Navy) | `#1B3A5C` | Sidebar, buttons, headers |
-| Accent (Orange) | `#E8720C` | CTAs, active nav, hot badges |
-| Secondary (Blue) | `#2E6DA4` | Links, info states |
+| Primary (Navy) | `#1B3A5C` | Sidebar background, primary buttons, headers |
+| Accent (Orange) | `#E8720C` | CTAs, active nav items, hot badges |
+| Secondary (Blue) | `#2E6DA4` | Links, info states, secondary accents |
 | Background | `#F2F4F6` | Page background |
-| Cards | `#FFFFFF` | Card surfaces |
+| Cards | `#FFFFFF` | Card surfaces with `shadow-sm border border-gray-200` |
 
 ---
 
-## Scripts
+## NPM Scripts
 
 ```bash
-npm run dev        # Start development server (localhost:5173)
-npm run build      # TypeScript check + production build
-npm run preview    # Preview production build locally
-npm run lint       # Run ESLint
+npm run dev      # Dev server at http://localhost:5173 with HMR
+npm run build    # TypeScript check + Vite production build → dist/
+npm run preview  # Serve the dist/ folder locally
+npm run lint     # ESLint check
 ```
+
+---
+
+## Known Issues / Remaining Polish (do after the 10 tasks above)
+
+- **Empty states** — Leads, Buyers, Pipeline columns, and Tasks need illustrated empty states with CTA buttons when there's no data
+- **Responsive layout** — Test at 768px (tablet). The Kanban board needs `overflow-x-auto` wrapper confirmed working
+- **Lead Detail — Comps section** — Allow adding comps directly from the drawer (currently only in Deal Analyzer)
+- **Tasks — Link to Lead/Deal** — The task create form should have dropdowns to link to a lead or deal
+- **Reports — Export CSV** — Add download buttons on each report card
+- **Notification bell** — Wire the TopBar bell to query tasks due today that are still pending
+- **Mark DNC action** — The lead row action "Mark DNC" should call `updateLead({ status: 'dnc', dnc: true })`
