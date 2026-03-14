@@ -78,6 +78,7 @@ export function Leads() {
   const totalPages = Math.ceil(total / 50);
 
   const deleteLead = useDeleteLead();
+  const updateLead = useUpdateLead();
   const createDeal = useCreateDeal();
   const [logActivityLead, setLogActivityLead] = useState<Lead | null>(null);
 
@@ -216,6 +217,12 @@ export function Leads() {
                             onClick={() => { setLogActivityLead(lead); setOpenMenuId(null); }}>
                             <Phone className="h-3.5 w-3.5" /> Log Activity
                           </button>
+                          {!lead.dnc && (
+                            <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-orange-600 hover:bg-orange-50"
+                              onClick={() => { if (confirm('Mark this lead as Do Not Contact?')) updateLead.mutateAsync({ id: lead.id, updates: { status: 'dnc', dnc: true } }); setOpenMenuId(null); }}>
+                              <Ban className="h-3.5 w-3.5" /> Mark DNC
+                            </button>
+                          )}
                           <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50" onClick={() => { if (confirm('Delete this lead?')) deleteLead.mutate(lead.id); setOpenMenuId(null); }}>
                             <Trash2 className="h-3.5 w-3.5" /> Delete
                           </button>

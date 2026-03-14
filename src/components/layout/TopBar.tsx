@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, Bell, Plus, UserCircle } from 'lucide-react';
 import { useUIStore } from '@/stores/useUIStore';
 import { supabase } from '@/lib/supabase';
+import { useTodayTasks } from '@/hooks/useTasks';
 import { cn } from '@/lib/utils';
 
 interface TopBarProps {
@@ -12,6 +13,9 @@ interface TopBarProps {
 export function TopBar({ onAddLead }: TopBarProps) {
   const [search, setSearch] = useState('');
   const { sidebarCollapsed } = useUIStore();
+  const navigate = useNavigate();
+  const { data: todayTasks = [] } = useTodayTasks();
+  const pendingTodayCount = todayTasks.length;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,9 +58,17 @@ export function TopBar({ onAddLead }: TopBarProps) {
         )}
 
         {/* Notifications */}
-        <button className="relative p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+        <button
+          onClick={() => navigate('/tasks')}
+          className="relative p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+          title={pendingTodayCount > 0 ? `${pendingTodayCount} task${pendingTodayCount > 1 ? 's' : ''} due today` : 'No tasks due today'}
+        >
           <Bell className="h-5 w-5" />
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-[#E8720C] rounded-full" />
+          {pendingTodayCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 h-4 w-4 bg-[#E8720C] rounded-full text-white text-[10px] font-bold flex items-center justify-center">
+              {pendingTodayCount > 9 ? '9+' : pendingTodayCount}
+            </span>
+          )}
         </button>
 
         {/* User */}

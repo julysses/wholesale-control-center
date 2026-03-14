@@ -8,6 +8,22 @@ import {
   PieChart, Pie, Cell, Legend, LineChart, Line
 } from 'recharts';
 import { cn } from '@/lib/utils';
+import { Download } from 'lucide-react';
+
+function exportCSV(filename: string, rows: Record<string, unknown>[]) {
+  if (!rows.length) return;
+  const keys = Object.keys(rows[0]);
+  const csv = [keys.join(','), ...rows.map((r) =>
+    keys.map((k) => JSON.stringify(r[k] ?? '')).join(',')
+  )].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 const COLORS = ['#1B3A5C', '#E8720C', '#2E6DA4', '#22c55e', '#f59e0b', '#a855f7', '#ec4899', '#14b8a6'];
 
@@ -202,7 +218,12 @@ export function Reports() {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Deal Performance */}
         <Card>
-          <CardHeader><CardTitle>Deal Performance</CardTitle></CardHeader>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Deal Performance</CardTitle>
+              <button onClick={() => exportCSV('deals.csv', closedDeals)} className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600" title="Export CSV"><Download className="h-4 w-4" /></button>
+            </div>
+          </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <StatCard title="Deals Closed" value={closedDeals.length} />
@@ -227,7 +248,12 @@ export function Reports() {
 
         {/* Lead Funnel */}
         <Card>
-          <CardHeader><CardTitle>Lead Funnel</CardTitle></CardHeader>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Lead Funnel</CardTitle>
+              <button onClick={() => exportCSV('leads.csv', leads)} className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600" title="Export CSV"><Download className="h-4 w-4" /></button>
+            </div>
+          </CardHeader>
           <CardContent className="space-y-4">
             <div className="h-52">
               <p className="text-xs font-medium text-gray-500 mb-2">Leads by Source</p>
@@ -271,7 +297,12 @@ export function Reports() {
 
         {/* Pipeline Health */}
         <Card>
-          <CardHeader><CardTitle>Pipeline Health</CardTitle></CardHeader>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Pipeline Health</CardTitle>
+              <button onClick={() => exportCSV('pipeline.csv', deals.filter((d: any) => !['closed','cancelled'].includes(d.stage)))} className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600" title="Export CSV"><Download className="h-4 w-4" /></button>
+            </div>
+          </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-3 gap-3">
               <StatCard title="Active Deals" value={Object.values(stageDeals).reduce((s, c) => s + c, 0)} />
@@ -298,7 +329,12 @@ export function Reports() {
 
         {/* Buyer Activity */}
         <Card>
-          <CardHeader><CardTitle>Buyer Activity</CardTitle></CardHeader>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Buyer Activity</CardTitle>
+              <button onClick={() => exportCSV('buyers.csv', buyers)} className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600" title="Export CSV"><Download className="h-4 w-4" /></button>
+            </div>
+          </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-3 gap-3">
               <StatCard title="Total Buyers" value={buyers.length} />

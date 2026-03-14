@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useTasks, useCreateTask, useUpdateTask, useCompleteTask } from '@/hooks/useTasks';
+import { useLeads } from '@/hooks/useLeads';
+import { useDeals } from '@/hooks/useDeals';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -264,6 +266,10 @@ function TaskFormModal({ open, task, onClose }: { open: boolean; task: Task | nu
   const updateTask = useUpdateTask();
   const isEdit = !!task;
 
+  const { data: leadsData } = useLeads({ pageSize: 200 });
+  const { data: deals = [] } = useDeals();
+  const leads = leadsData?.data ?? [];
+
   const [form, setForm] = useState({
     title: task?.title || '',
     description: task?.description || '',
@@ -271,6 +277,8 @@ function TaskFormModal({ open, task, onClose }: { open: boolean; task: Task | nu
     type: task?.type || 'follow_up',
     status: task?.status || 'pending',
     due_date: task?.due_date ? task.due_date.slice(0, 16) : '',
+    lead_id: task?.lead_id || '',
+    deal_id: task?.deal_id || '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -279,6 +287,8 @@ function TaskFormModal({ open, task, onClose }: { open: boolean; task: Task | nu
     const payload = {
       ...form,
       due_date: form.due_date ? new Date(form.due_date).toISOString() : undefined,
+      lead_id: form.lead_id || undefined,
+      deal_id: form.deal_id || undefined,
     };
     if (isEdit && task) {
       await updateTask.mutateAsync({ id: task.id, updates: payload });
@@ -302,6 +312,12 @@ function TaskFormModal({ open, task, onClose }: { open: boolean; task: Task | nu
             onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
           <Select label="Status" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}
             options={[{ value: 'pending', label: 'Pending' }, { value: 'in_progress', label: 'In Progress' }, { value: 'completed', label: 'Completed' }]} />
+          <Select label="Link to Lead" value={form.lead_id} onChange={(e) => setForm({ ...form, lead_id: e.target.value, deal_id: '' })}
+            options={leads.map((l) => ({ value: l.id, label: l.property_address }))}
+            placeholder="None" />
+          <Select label="Link to Deal" value={form.deal_id} onChange={(e) => setForm({ ...form, deal_id: e.target.value, lead_id: '' })}
+            options={deals.map((d) => ({ value: d.id, label: d.deal_name || d.lead?.property_address || d.id }))}
+            placeholder="None" />
         </div>
         <div className="flex justify-end gap-3">
           <Button variant="outline" type="button" onClick={onClose}>Cancel</Button>
