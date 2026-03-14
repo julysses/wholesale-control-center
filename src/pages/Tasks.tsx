@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Task } from '@/types';
+import type { Task } from '@/types';
 import { formatDateTime, daysUntil, getPriorityClass } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import {

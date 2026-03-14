@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useLeads, useDeleteLead, useCreateLead, useUpdateLead, useLogActivity } from '@/hooks/useLeads';
 import { useLeadQualifier } from '@/hooks/useAIAgent';
+import { useCreateDeal } from '@/hooks/useDeals';
+import { OutreachTimeline } from '@/components/leads/OutreachTimeline';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +11,7 @@ import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { TableSkeleton } from '@/components/ui/skeleton';
-import { Lead } from '@/types';
+import type { Lead } from '@/types';
 import {
   formatDate, phoneFormat, getStatusClass, getStatusLabel,
   getScoreBadgeClass, truncate
@@ -76,6 +78,21 @@ export function Leads() {
   const totalPages = Math.ceil(total / 50);
 
   const deleteLead = useDeleteLead();
+  const createDeal = useCreateDeal();
+  const [logActivityLead, setLogActivityLead] = useState<Lead | null>(null);
+
+  const handleMoveToPipeline = async (lead: Lead) => {
+    if (!confirm(`Create a pipeline deal for ${lead.property_address}?`)) return;
+    await createDeal.mutateAsync({
+      lead_id: lead.id,
+      deal_name: lead.property_address,
+      stage: 'offer_made',
+      contract_price: lead.offer_price ?? lead.mao ?? undefined,
+      arv: lead.estimated_arv ?? undefined,
+      repair_estimate: lead.estimated_repairs ?? undefined,
+      seller_name: `${lead.owner_first_name ?? ''} ${lead.owner_last_name ?? ''}`.trim() || undefined,
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -191,6 +208,14 @@ export function Leads() {
                           <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => { setDetailLead(lead); setOpenMenuId(null); }}>
                             <Eye className="h-3.5 w-3.5" /> View / Edit
                           </button>
+                          <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                            onClick={() => { handleMoveToPipeline(lead); setOpenMenuId(null); }}>
+                            <ArrowRight className="h-3.5 w-3.5" /> Move to Pipeline
+                          </button>
+                          <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                            onClick={() => { setLogActivityLead(lead); setOpenMenuId(null); }}>
+                            <Phone className="h-3.5 w-3.5" /> Log Activity
+                          </button>
                           <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50" onClick={() => { if (confirm('Delete this lead?')) deleteLead.mutate(lead.id); setOpenMenuId(null); }}>
                             <Trash2 className="h-3.5 w-3.5" /> Delete
                           </button>
@@ -227,6 +252,9 @@ export function Leads() {
       {/* Modals */}
       <LeadFormModal open={addOpen} onClose={() => setAddOpen(false)} />
       <ImportCSVModal open={importOpen} onClose={() => setImportOpen(false)} />
+      {logActivityLead && (
+        <LogActivityModal lead={logActivityLead} onClose={() => setLogActivityLead(null)} />
+      )}
       {detailLead && (
         <LeadDetailDrawer lead={detailLead} onClose={() => setDetailLead(null)} />
       )}
@@ -488,6 +516,7 @@ function LeadDetailDrawer({ lead, onClose }: { lead: Lead; onClose: () => void }
   const updateLead = useUpdateLead();
   const { qualify, loading: aiLoading, result: aiResult } = useLeadQualifier();
   const [form, setForm] = useState<Partial<Lead>>(lead);
+  const [activeTab, setActiveTab] = useState<'details' | 'timeline'>('details');
   const set = (k: string, v: unknown) => setForm((f) => ({ ...f, [k]: v }));
 
   const handleSave = async () => {
@@ -505,7 +534,25 @@ function LeadDetailDrawer({ lead, onClose }: { lead: Lead; onClose: () => void }
 
   return (
     <Modal open={true} onClose={onClose} title={lead.property_address} size="2xl">
-      <div className="p-6 space-y-6">
+      <div className="p-6">
+        {/* Tabs */}
+        <div className="flex border-b border-gray-200 mb-6">
+          {(['details', 'timeline'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={cn(
+                'px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors',
+                activeTab === tab
+                  ? 'border-[#1B3A5C] text-[#1B3A5C]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              )}
+            >
+              {tab === 'timeline' ? 'Activity Timeline' : 'Details'}
+            </button>
+          ))}
+        </div>
+        {activeTab === 'details' && (<div className="space-y-6">
         {/* Scores */}
         <div className="bg-gray-50 rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
@@ -600,7 +647,79 @@ function LeadDetailDrawer({ lead, onClose }: { lead: Lead; onClose: () => void }
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSave} loading={updateLead.isPending}>Save Changes</Button>
         </div>
+        </div>)}
+        {activeTab === 'timeline' && (
+          <OutreachTimeline leadId={lead.id} />
+        )}
       </div>
+    </Modal>
+  );
+}
+
+function LogActivityModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
+  const logActivity = useLogActivity();
+  const [form, setForm] = useState({
+    channel: 'call',
+    direction: 'outbound',
+    status: 'answered',
+    message: '',
+    response: '',
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await logActivity.mutateAsync({
+      lead_id: lead.id,
+      channel: form.channel,
+      direction: form.direction,
+      status: form.status,
+      message: form.message || undefined,
+      response: form.response || undefined,
+    });
+    onClose();
+  };
+
+  return (
+    <Modal open={true} onClose={onClose} title={`Log Activity — ${lead.property_address}`} size="md">
+      <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <Select label="Channel" value={form.channel}
+            onChange={(e) => setForm({ ...form, channel: e.target.value })}
+            options={[
+              { value: 'call', label: 'Call' },
+              { value: 'sms', label: 'SMS' },
+              { value: 'email', label: 'Email' },
+              { value: 'voicemail', label: 'Voicemail' },
+              { value: 'direct_mail', label: 'Direct Mail' },
+              { value: 'in_person', label: 'In Person' },
+            ]} />
+          <Select label="Direction" value={form.direction}
+            onChange={(e) => setForm({ ...form, direction: e.target.value })}
+            options={[
+              { value: 'outbound', label: 'Outbound' },
+              { value: 'inbound', label: 'Inbound' },
+            ]} />
+          <Select label="Status" value={form.status}
+            onChange={(e) => setForm({ ...form, status: e.target.value })}
+            options={[
+              { value: 'answered', label: 'Answered' },
+              { value: 'no_answer', label: 'No Answer' },
+              { value: 'voicemail', label: 'Left Voicemail' },
+              { value: 'sent', label: 'Sent' },
+              { value: 'delivered', label: 'Delivered' },
+            ]} />
+        </div>
+        <Textarea label="Message / Notes" value={form.message}
+          onChange={(e) => setForm({ ...form, message: e.target.value })}
+          placeholder="What was said or sent..." rows={3} />
+        <Textarea label="Seller Response (if any)" value={form.response}
+          onChange={(e) => setForm({ ...form, response: e.target.value })}
+          placeholder="What the seller said back..." rows={2} />
+        <div className="flex justify-end gap-3">
+          <Button variant="outline" type="button" onClick={onClose}>Cancel</Button>
+          <Button type="submit" loading={logActivity.isPending}>Log Activity</Button>
+        </div>
+      </form>
     </Modal>
   );
 }

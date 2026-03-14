@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Deal } from '@/types';
+import type { Deal } from '@/types';
 
 interface DealStore {
   deals: Deal[];

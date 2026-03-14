@@ -60,7 +60,11 @@ export function TopBar({ onAddLead }: TopBarProps) {
         </button>
 
         {/* User */}
-        <button className="flex items-center gap-2 p-2 text-gray-600 rounded-lg hover:bg-gray-100">
+        <button
+          onClick={async () => { await supabase.auth.signOut(); }}
+          className="flex items-center gap-2 p-2 text-gray-600 rounded-lg hover:bg-gray-100"
+          title="Sign out"
+        >
           <UserCircle className="h-6 w-6" />
         </button>
       </div>

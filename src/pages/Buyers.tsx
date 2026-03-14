@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { TableSkeleton } from '@/components/ui/skeleton';
-import { Buyer } from '@/types';
+import type { Buyer } from '@/types';
 import { getTierClass, phoneFormat, formatDate, formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { Plus, Search, MoreHorizontal, Trash2, Edit, Bot } from 'lucide-react';

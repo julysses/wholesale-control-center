@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Lead } from '@/types';
+import type { Lead } from '@/types';
 
 interface LeadStore {
   selectedLead: Lead | null;

@@ -1,4 +1,4 @@
-import { Deal } from '@/types';
+import type { Deal } from '@/types';
 import { formatCurrency, daysUntil, getStageLabel } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { Calendar, DollarSign, User } from 'lucide-react';

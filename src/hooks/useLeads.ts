@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { Lead } from '@/types';
+import type { Lead } from '@/types';
 import { toast } from 'sonner';
 
 interface LeadsFilter {
@@ -157,6 +157,7 @@ export function useLogActivity() {
       direction: string;
       status?: string;
       message?: string;
+      response?: string;
     }) => {
       const { error } = await supabase.from('outreach_activity').insert(activity);
       if (error) throw error;

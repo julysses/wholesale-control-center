@@ -1,4 +1,4 @@
-import { Deal } from '@/types';
+import type { Deal } from '@/types';
 import { DealCard } from './DealCard';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';

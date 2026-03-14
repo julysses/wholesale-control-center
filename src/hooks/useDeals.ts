@@ -1,13 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Deal } from '@/types';
+import type { Deal } from '@/types';
 import { useDealStore } from '@/stores/useDealStore';
 import { toast } from 'sonner';
 
 export function useDeals() {
   const setDeals = useDealStore((s) => s.setDeals);
+  const qc = useQueryClient();
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ['deals'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -21,6 +23,18 @@ export function useDeals() {
     },
     staleTime: 60000,
   });
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('deals-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'deals' }, () => {
+        qc.invalidateQueries({ queryKey: ['deals'] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [qc]);
+
+  return query;
 }
 
 export function useUpcomingClosings() {

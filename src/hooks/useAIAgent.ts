@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useUpdateLead } from './useLeads';
-import { QualificationResult, OfferResult, OutreachVariation, BuyerMatchResult } from '@/types';
+import type { QualificationResult, OfferResult, OutreachVariation, BuyerMatchResult } from '@/types';
 
 export function useLeadQualifier() {
   const [loading, setLoading] = useState(false);

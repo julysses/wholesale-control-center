@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Plus, Trash2, Calculator, TrendingUp, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLeads, useUpdateLead } from '@/hooks/useLeads';
 
 interface Comp {
   address: string;
@@ -52,6 +53,27 @@ export function DealAnalyzer() {
   const [assignmentFee, setAssignmentFee] = useState<number>(15000);
   const [aiRec, setAiRec] = useState<string>('');
   const [loadingAi, setLoadingAi] = useState(false);
+  const [saveLeadId, setSaveLeadId] = useState('');
+  const [savingToLead, setSavingToLead] = useState(false);
+  const { data: leadsData } = useLeads({ pageSize: 200 });
+  const updateLead = useUpdateLead();
+  const allLeads = leadsData?.data ?? [];
+
+  const handleSaveToLead = async () => {
+    if (!saveLeadId) return toast.error('Select a lead to save to');
+    if (arv === 0) return toast.error('Calculate ARV first');
+    setSavingToLead(true);
+    await updateLead.mutateAsync({
+      id: saveLeadId,
+      updates: {
+        estimated_arv: arv,
+        estimated_repairs: estimatedRepairs,
+        mao: mao > 0 ? mao : undefined,
+      },
+    });
+    setSavingToLead(false);
+    toast.success('Analysis saved to lead');
+  };
 
   // Calculate ARV from comps
   const calculateARV = () => {
@@ -325,6 +347,31 @@ export function DealAnalyzer() {
               )}
             </CardContent>
           </Card>
+
+          {/* Save to Lead */}
+          {arv > 0 && (
+            <Card>
+              <CardHeader><CardTitle>Save to Lead</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <Select
+                  label="Select Lead"
+                  value={saveLeadId}
+                  onChange={(e) => setSaveLeadId(e.target.value)}
+                  options={allLeads.map((l) => ({ value: l.id, label: l.property_address }))}
+                  placeholder="Choose a lead..."
+                />
+                <Button
+                  onClick={handleSaveToLead}
+                  loading={savingToLead}
+                  disabled={!saveLeadId}
+                  icon={<Save className="h-4 w-4" />}
+                  className="w-full"
+                >
+                  Save ARV + Repairs + MAO to Lead
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Summary */}
           {arv > 0 && (
